@@ -5,7 +5,7 @@ Production-ready NestJS boilerplate with authentication, authorization, and ente
 ## ✨ Features
 
 - **JWT Auth** — Access token (15m) + Refresh token (7d) rotation
-- **Role-based access** — SUPER_ADMIN | ADMIN | TEACHER | STUDENT | PARENT
+- **Role-based access** — SUPER_ADMIN | ADMIN | USER
 - **Security** — Rate limiting, bcrypt, timing-attack protection, PII masking
 - **Winston Logger** — Structured JSON logs (production) / pretty logs (development)
 - **TypeORM** — PostgreSQL with migration support
