@@ -1,0 +1,366 @@
+{
+  "info": {
+    "name": "ProjectX Backend API",
+    "description": "NestJS Enterprise Starter — Auth + Health endpoints\n\n**Setup:**\n1. Set `baseUrl` variable to your server (default: http://localhost:3000)\n2. Run `Register` first → `Login` → remaining requests use auto-saved tokens\n\n**Auto token handling:**\n- Login & Register responses auto-save `accessToken` and `refreshToken` to collection variables\n- All protected requests use `{{accessToken}}` automatically",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",      "value": "http://localhost:3000",  "type": "string" },
+    { "key": "accessToken",  "value": "",                       "type": "string" },
+    { "key": "refreshToken", "value": "",                       "type": "string" },
+    { "key": "userId",       "value": "",                       "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "health"]
+            },
+            "description": "Liveness/readiness probe — checks DB ping and heap memory.\nNo auth required. Returns `status: ok` or `status: error`."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"status\": \"ok\",\n    \"info\": {\n      \"database\": { \"status\": \"up\" },\n      \"memory_heap\": { \"status\": \"up\" }\n    },\n    \"error\": {},\n    \"details\": {\n      \"database\": { \"status\": \"up\" },\n      \"memory_heap\": { \"status\": \"up\" }\n    }\n  },\n  \"timestamp\": \"2024-01-01T00:00:00.000Z\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  const data = body.data ?? body;",
+                  "  if (data.accessToken)  pm.collectionVariables.set('accessToken',  data.accessToken);",
+                  "  if (data.refreshToken) pm.collectionVariables.set('refreshToken', data.refreshToken);",
+                  "  if (data.user?.id)     pm.collectionVariables.set('userId',       data.user.id);",
+                  "  console.log('Registered — userId:', data.user?.id);",
+                  "}",
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Has accessToken',  () => pm.expect(pm.collectionVariables.get('accessToken')).to.not.be.empty);",
+                  "pm.test('Has refreshToken', () => pm.expect(pm.collectionVariables.get('refreshToken')).to.not.be.empty);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@projectx.dev\",\n  \"password\": \"Admin@1234\",\n  \"role\": \"ADMIN\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "register"]
+            },
+            "description": "Create a new account.\n\n**Roles:** SUPER_ADMIN | ADMIN | TEACHER | STUDENT | PARENT (default: STUDENT)\n\n**Password rules:** 8-72 chars, must include uppercase, lowercase, number, special char (@$!%*?&)\n\nOn success → auto-saves `accessToken`, `refreshToken`, `userId` to collection variables."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"user\": {\n      \"id\": \"uuid-here\",\n      \"email\": \"admin@projectx.dev\",\n      \"role\": \"ADMIN\",\n      \"isActive\": true,\n      \"createdDate\": \"2024-01-01T00:00:00.000Z\",\n      \"updatedDate\": \"2024-01-01T00:00:00.000Z\"\n    },\n    \"accessToken\": \"eyJ...\",\n    \"refreshToken\": \"eyJ...\"\n  },\n  \"timestamp\": \"2024-01-01T00:00:00.000Z\"\n}"
+            },
+            {
+              "name": "409 Conflict — Email exists",
+              "status": "Conflict",
+              "code": 409,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"statusCode\": 409,\n  \"path\": \"/api/v1/auth/register\",\n  \"message\": [\"A user with this email already exists\"],\n  \"timestamp\": \"2024-01-01T00:00:00.000Z\"\n}"
+            },
+            {
+              "name": "400 Bad Request — Weak password",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"statusCode\": 400,\n  \"path\": \"/api/v1/auth/register\",\n  \"message\": [\"Password must be 8-72 characters and contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)\"],\n  \"timestamp\": \"2024-01-01T00:00:00.000Z\"\n}"
+            },
+            {
+              "name": "429 Too Many Requests — Rate limited",
+              "status": "Too Many Requests",
+              "code": 429,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"statusCode\": 429,\n  \"path\": \"/api/v1/auth/register\",\n  \"message\": [\"ThrottlerException: Too Many Requests\"],\n  \"timestamp\": \"2024-01-01T00:00:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Register — Student (no role)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Default role is STUDENT', () => {",
+                  "  const data = pm.response.json().data ?? pm.response.json();",
+                  "  pm.expect(data.user.role).to.eql('STUDENT');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student@projectx.dev\",\n  \"password\": \"Student@1234\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "register"]
+            },
+            "description": "Register without a role — should default to STUDENT."
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  const data = body.data ?? body;",
+                  "  if (data.accessToken)  pm.collectionVariables.set('accessToken',  data.accessToken);",
+                  "  if (data.refreshToken) pm.collectionVariables.set('refreshToken', data.refreshToken);",
+                  "  if (data.user?.id)     pm.collectionVariables.set('userId',       data.user.id);",
+                  "  console.log('Logged in — userId:', data.user?.id);",
+                  "}",
+                  "pm.test('Status 200',       () => pm.response.to.have.status(200));",
+                  "pm.test('Has accessToken',  () => pm.expect(pm.collectionVariables.get('accessToken')).to.not.be.empty);",
+                  "pm.test('Has refreshToken', () => pm.expect(pm.collectionVariables.get('refreshToken')).to.not.be.empty);",
+                  "pm.test('Password not in response', () => {",
+                  "  pm.expect(pm.response.text()).to.not.include('password');",
+                  "  pm.expect(pm.response.text()).to.not.include('hashedRefreshToken');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@projectx.dev\",\n  \"password\": \"Admin@1234\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Authenticate and receive JWT token pair.\n\nOn success → auto-saves `accessToken`, `refreshToken`, `userId`.\n\nAlso tests that `password` and `hashedRefreshToken` are never returned in the response."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"user\": {\n      \"id\": \"uuid-here\",\n      \"email\": \"admin@projectx.dev\",\n      \"role\": \"ADMIN\",\n      \"isActive\": true,\n      \"createdDate\": \"2024-01-01T00:00:00.000Z\",\n      \"updatedDate\": \"2024-01-01T00:00:00.000Z\"\n    },\n    \"accessToken\": \"eyJ...\",\n    \"refreshToken\": \"eyJ...\"\n  },\n  \"timestamp\": \"2024-01-01T00:00:00.000Z\"\n}"
+            },
+            {
+              "name": "401 Unauthorized — Wrong password",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"statusCode\": 401,\n  \"path\": \"/api/v1/auth/login\",\n  \"message\": [\"Invalid email or password\"],\n  \"timestamp\": \"2024-01-01T00:00:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login — Invalid credentials",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Generic error message — no user enumeration', () => {",
+                  "  const msg = pm.response.json().message?.[0] ?? '';",
+                  "  pm.expect(msg).to.eql('Invalid email or password');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"notexist@projectx.dev\",\n  \"password\": \"Wrong@1234\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Tests that non-existent email returns the same generic message as wrong password — prevents user enumeration."
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  const data = body.data ?? body;",
+                  "  if (data.accessToken)  pm.collectionVariables.set('accessToken',  data.accessToken);",
+                  "  if (data.refreshToken) pm.collectionVariables.set('refreshToken', data.refreshToken);",
+                  "  console.log('Tokens rotated');",
+                  "}",
+                  "pm.test('Status 200',            () => pm.response.to.have.status(200));",
+                  "pm.test('New accessToken issued', () => pm.expect(pm.collectionVariables.get('accessToken')).to.not.be.empty);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "refresh"]
+            },
+            "description": "Rotate token pair using a valid refresh token.\n\n`userId` is extracted from the verified JWT — NOT passed in the body (security fix).\n\nOn success → auto-saves new `accessToken` and `refreshToken`."
+          },
+          "response": [
+            {
+              "name": "200 OK — Tokens rotated",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accessToken\": \"eyJ...\",\n    \"refreshToken\": \"eyJ...\"\n  },\n  \"timestamp\": \"2024-01-01T00:00:00.000Z\"\n}"
+            },
+            {
+              "name": "401 Unauthorized — Invalid refresh token",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"statusCode\": 401,\n  \"path\": \"/api/v1/auth/refresh\",\n  \"message\": [\"Invalid or expired session\"],\n  \"timestamp\": \"2024-01-01T00:00:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Logout message', () => {",
+                  "  const data = pm.response.json().data ?? pm.response.json();",
+                  "  pm.expect(data.message).to.eql('Logged out successfully');",
+                  "});",
+                  "// Clear tokens after logout",
+                  "pm.collectionVariables.set('accessToken', '');",
+                  "pm.collectionVariables.set('refreshToken', '');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "logout"]
+            },
+            "description": "Revoke the refresh token — invalidates the current session.\n\nRequires `Authorization: Bearer {{accessToken}}`.\n\nOn success → clears `accessToken` and `refreshToken` collection variables."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": { \"message\": \"Logged out successfully\" },\n  \"timestamp\": \"2024-01-01T00:00:00.000Z\"\n}"
+            },
+            {
+              "name": "401 Unauthorized — No token",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"statusCode\": 401,\n  \"path\": \"/api/v1/auth/logout\",\n  \"message\": [\"Invalid or expired access token\"],\n  \"timestamp\": \"2024-01-01T00:00:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout — No token (expect 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "logout"]
+            },
+            "description": "Calling logout without a Bearer token should return 401."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
