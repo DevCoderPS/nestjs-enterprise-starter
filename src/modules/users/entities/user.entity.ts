@@ -23,7 +23,7 @@ export class User extends AuditBaseEntity {
     name: 'role',
     type: 'enum',
     enum: UserRole,
-    default: UserRole.STUDENT,
+    default: UserRole.USER,
   })
   role!: UserRole;
 

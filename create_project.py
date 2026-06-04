@@ -348,9 +348,7 @@ export abstract class AuditBaseEntity {
 FILES["src/common/enums/user-role.enum.ts"] = r"""export enum UserRole {
   SUPER_ADMIN = 'SUPER_ADMIN',
   ADMIN = 'ADMIN',
-  TEACHER = 'TEACHER',
-  STUDENT = 'STUDENT',
-  PARENT = 'PARENT',
+  USER = 'USER'
 }"""
 
 # ─── Common — Decorators ──────────────────────────────────────────────────────
@@ -661,7 +659,7 @@ export class User extends AuditBaseEntity {
     name: 'role',
     type: 'enum',
     enum: UserRole,
-    default: UserRole.STUDENT,
+    default: UserRole.USER,
   })
   role!: UserRole;
 
