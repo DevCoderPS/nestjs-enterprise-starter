@@ -1,4 +1,4 @@
-import { plainToInstance } from 'class-transformer';
+import { plainToInstance } from "class-transformer";
 import {
   IsBoolean,
   IsInt,
@@ -8,7 +8,7 @@ import {
   Max,
   Min,
   validateSync,
-} from 'class-validator';
+} from "class-validator";
 
 class EnvironmentVariables {
   @IsInt()
@@ -37,7 +37,9 @@ class EnvironmentVariables {
   ALLOW_SYNC?: boolean;
 }
 
-export function validate(config: Record<string, unknown>): EnvironmentVariables {
+export function validate(
+  config: Record<string, unknown>,
+): EnvironmentVariables {
   const validatedConfig = plainToInstance(EnvironmentVariables, config, {
     enableImplicitConversion: true,
   });
@@ -49,8 +51,8 @@ export function validate(config: Record<string, unknown>): EnvironmentVariables 
   if (errors.length > 0) {
     throw new Error(
       `Environment validation failed:\n${errors
-        .map((e) => Object.values(e.constraints ?? {}).join(', '))
-        .join('\n')}`,
+        .map((e) => Object.values(e.constraints ?? {}).join(", "))
+        .join("\n")}`,
     );
   }
 

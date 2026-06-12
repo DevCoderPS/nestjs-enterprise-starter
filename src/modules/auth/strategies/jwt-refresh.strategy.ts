@@ -1,24 +1,27 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
-import { Request } from 'express';
-import { JwtPayload } from '@modules/auth/strategies/jwt.strategy';
+import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { PassportStrategy } from "@nestjs/passport";
+import { ExtractJwt, Strategy } from "passport-jwt";
+import { Request } from "express";
+import { JwtPayload } from "@modules/auth/strategies/jwt.strategy";
 
 export interface JwtRefreshPayload extends JwtPayload {
   refreshToken: string;
 }
 
 @Injectable()
-export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
+export class JwtRefreshStrategy extends PassportStrategy(
+  Strategy,
+  "jwt-refresh",
+) {
   constructor(configService: ConfigService) {
-    const secret = configService.get<string>('JWT_REFRESH_SECRET');
+    const secret = configService.get<string>("JWT_REFRESH_SECRET");
     if (!secret) {
-      throw new Error('JWT_REFRESH_SECRET is not configured');
+      throw new Error("JWT_REFRESH_SECRET is not configured");
     }
 
     super({
-      jwtFromRequest: ExtractJwt.fromBodyField('refreshToken'),
+      jwtFromRequest: ExtractJwt.fromBodyField("refreshToken"),
       ignoreExpiration: false,
       secretOrKey: secret,
       passReqToCallback: true,
@@ -29,7 +32,7 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
     const refreshToken = (req.body as { refreshToken?: string }).refreshToken;
 
     if (!refreshToken) {
-      throw new UnauthorizedException('Refresh token missing');
+      throw new UnauthorizedException("Refresh token missing");
     }
 
     return { ...payload, refreshToken };

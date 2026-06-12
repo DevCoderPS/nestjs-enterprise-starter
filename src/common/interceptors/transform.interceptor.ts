@@ -3,8 +3,8 @@ import {
   ExecutionContext,
   Injectable,
   NestInterceptor,
-} from '@nestjs/common';
-import { map, Observable } from 'rxjs';
+} from "@nestjs/common";
+import { map, Observable } from "rxjs";
 
 export interface TransformedResponse<T> {
   success: true;
@@ -13,9 +13,10 @@ export interface TransformedResponse<T> {
 }
 
 @Injectable()
-export class TransformInterceptor<T>
-  implements NestInterceptor<T, TransformedResponse<T>>
-{
+export class TransformInterceptor<T> implements NestInterceptor<
+  T,
+  TransformedResponse<T>
+> {
   intercept(
     _context: ExecutionContext,
     next: CallHandler<T>,

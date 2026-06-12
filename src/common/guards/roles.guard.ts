@@ -3,11 +3,11 @@ import {
   ExecutionContext,
   ForbiddenException,
   Injectable,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { UserRole } from '@common/enums/user-role.enum';
-import { ROLES_KEY } from '@common/decorators/roles.decorator';
-import { AuthenticatedRequest } from '@common/decorators/get-user.decorator';
+} from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { UserRole } from "@common/enums/user-role.enum";
+import { ROLES_KEY } from "@common/decorators/roles.decorator";
+import { AuthenticatedRequest } from "@common/decorators/get-user.decorator";
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -27,14 +27,14 @@ export class RolesGuard implements CanActivate {
     const { user } = request;
 
     if (!user) {
-      throw new ForbiddenException('Access denied: no authenticated user');
+      throw new ForbiddenException("Access denied: no authenticated user");
     }
 
     const hasRole = requiredRoles.some((role) => user.role === role);
 
     if (!hasRole) {
       throw new ForbiddenException(
-        `Access denied: requires one of [${requiredRoles.join(', ')}]`,
+        `Access denied: requires one of [${requiredRoles.join(", ")}]`,
       );
     }
 
